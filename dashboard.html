@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Admin - Frontend Only</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    transitionProperty: {
+                        'colors': 'background-color, border-color, color, fill, stroke',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { transition: background-color 0.3s ease, border-color 0.3s ease; }
+        .toast-enter { transform: translateY(100px); opacity: 0; }
+        .toast-show { transform: translateY(0); opacity: 1; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[100] space-y-3 pointer-events-none"></div>
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shadow-xl lg:shadow-none">
+            <div class="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
+                <span class="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">Nexus Admin</span>
+                <button onclick="toggleSidebar()" class="lg:hidden p-2"><i data-lucide="x"></i></button>
+            </div>
+            <nav class="p-4 space-y-1">
+                <a href="#dashboard" class="sidebar-link flex items-center px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+                </a>
+                <a href="#users" class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i data-lucide="users" class="w-5 h-5 mr-3"></i> Users
+                </a>
+                <a href="#orders" class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i data-lucide="shopping-cart" class="w-5 h-5 mr-3"></i> Orders
+                </a>
+                <a href="#settings" class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i data-lucide="settings" class="w-5 h-5 mr-3"></i> Settings
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden lg:ml-64">
+
+            <!-- Header -->
+            <header class="h-16 flex items-center justify-between px-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-40">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 text-gray-600 dark:text-gray-400">
+                    <i data-lucide="menu"></i>
+                </button>
+
+                <div class="flex items-center space-x-4 ml-auto">
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i data-lucide="sun" id="sun-icon" class="hidden"></i>
+                        <i data-lucide="moon" id="moon-icon"></i>
+                    </button>
+
+                    <div class="relative">
+                        <button onclick="toggleDropdown(event)" id="profile-btn" class="flex items-center focus:outline-none">
+                            <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">JD</div>
+                        </button>
+                        <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-2">
+                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><i data-lucide="user" class="inline w-4 h-4 mr-2"></i> Profile</a>
+                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><i data-lucide="settings" class="inline w-4 h-4 mr-2"></i> Settings</a>
+                            <hr class="my-1 border-gray-200 dark:border-gray-700">
+                            <a href="#" class="block px-4 py-2 text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><i data-lucide="log-out" class="inline w-4 h-4 mr-2"></i> Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Sections -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar">
+
+                <!-- Dashboard Section -->
+                <div id="dashboard-section" class="content-section">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                        <div class="stat-card p-5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                            <p class="text-xs text-gray-500 uppercase font-semibold">Total Users</p>
+                            <h3 class="text-xl font-bold mt-1">12,482</h3>
+                        </div>
+                        <div class="stat-card p-5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                            <p class="text-xs text-gray-500 uppercase font-semibold">Revenue</p>
+                            <h3 class="text-xl font-bold mt-1">$45,200</h3>
+                        </div>
+                        <div class="stat-card p-5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                            <p class="text-xs text-gray-500 uppercase font-semibold">Monthly Sales</p>
+                            <h3 class="text-xl font-bold mt-1">1,240</h3>
+                        </div>
+                        <div class="stat-card p-5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                            <p class="text-xs text-gray-500 uppercase font-semibold">New Orders</p>
+                            <h3 class="text-xl font-bold mt-1">156</h3>
+                        </div>
+                        <div class="stat-card p-5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                            <p class="text-xs text-gray-500 uppercase font-semibold">Tickets</p>
+                            <h3 class="text-xl font-bold mt-1">12</h3>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                        <div class="lg:col-span-2 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 min-h-[300px]">
+                            <h3 class="font-bold mb-4">Monthly Sales Trend</h3>
+                            <div class="h-64"><canvas id="lineChart"></canvas></div>
+                        </div>
+                        <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 min-h-[300px]">
+                            <h3 class="font-bold mb-4">User Status</h3>
+                            <div class="h-64"><canvas id="pieChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-8">
+                        <h3 class="font-bold mb-4">Monthly Orders Distribution</h3>
+                        <div class="h-64"><canvas id="barChart"></canvas></div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <h2 class="text-lg font-semibold">Customer Directory</h2>
+                            <input type="text" id="tableSearch" onkeyup="filterTable()" placeholder="Filter by name or email..." class="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64 transition-all">
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left" id="customerTable">
+                                <thead class="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 text-xs uppercase font-bold">
+                                    <tr>
+                                        <th class="px-6 py-4">Name</th>
+                                        <th class="px-6 py-4">Email</th>
+                                        <th class="px-6 py-4">Status</th>
+                                        <th class="px-6 py-4 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                                    <tr class="customer-row hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                        <td class="px-6 py-4 font-medium name-cell">Alex Johnson</td>
+                                        <td class="px-6 py-4 email-cell">alex@example.com</td>
+                                        <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">Active</span></td>
+                                        <td class="px-6 py-4 text-right"><button onclick="showToast('Alex Johnson')" class="text-blue-500 hover:text-blue-700 font-medium">Edit</button></td>
+                                    </tr>
+                                    <tr class="customer-row hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                        <td class="px-6 py-4 font-medium name-cell">Maria Garcia</td>
+                                        <td class="px-6 py-4 email-cell">m.garcia@mail.com</td>
+                                        <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-semibold text-yellow-700 bg-yellow-100 rounded-full">Pending</span></td>
+                                        <td class="px-6 py-4 text-right"><button onclick="showToast('Maria Garcia')" class="text-blue-500 hover:text-blue-700 font-medium">Edit</button></td>
+                                    </tr>
+                                    <tr class="customer-row hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                        <td class="px-6 py-4 font-medium name-cell">David Smith</td>
+                                        <td class="px-6 py-4 email-cell">d.smith@web.com</td>
+                                        <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-semibold text-red-700 bg-red-100 rounded-full">Inactive</span></td>
+                                        <td class="px-6 py-4 text-right"><button onclick="showToast('David Smith')" class="text-blue-500 hover:text-blue-700 font-medium">Edit</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Section -->
+                <div id="users-section" class="content-section hidden">
+                    <h2 class="text-xl font-bold mb-4">Users Section</h2>
+                    <p>This is a placeholder for user data. You can list users or add more tables here.</p>
+                </div>
+
+                <!-- Orders Section -->
+                <div id="orders-section" class="content-section hidden">
+                    <h2 class="text-xl font-bold mb-4">Orders Section</h2>
+                    <p>This is a placeholder for orders. You can show order tables, stats, etc.</p>
+                </div>
+
+                <!-- Settings Section -->
+                <div id="settings-section" class="content-section hidden">
+                    <h2 class="text-xl font-bold mb-4">Settings Section</h2>
+                    <p>This is a placeholder for settings. Add toggles, preferences, or themes here.</p>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Sidebar toggle
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        }
+
+        // Profile dropdown
+        function toggleDropdown(e) {
+            e.stopPropagation();
+            document.getElementById('profile-dropdown').classList.toggle('hidden');
+        }
+        window.onclick = function(event) {
+            if (!event.target.closest('#profile-btn')) {
+                document.getElementById('profile-dropdown').classList.add('hidden');
+            }
+        }
+
+        // Table filter
+        function filterTable() {
+            const input = document.getElementById('tableSearch');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('.customer-row');
+            rows.forEach(row => {
+                const name = row.querySelector('.name-cell').innerText.toLowerCase();
+                const email = row.querySelector('.email-cell').innerText.toLowerCase();
+                row.style.display = name.includes(filter) || email.includes(filter) ? "" : "none";
+            });
+        }
+
+        // Toast
+        function showToast(name) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-white dark:bg-gray-800 border-l-4 border-green-500 shadow-2xl p-4 rounded-lg flex items-center space-x-3 toast-enter transition-all duration-300 pointer-events-auto';
+            toast.innerHTML = `<i data-lucide="check-circle" class="text-green-500 w-5 h-5"></i>
+                               <span class="text-sm font-medium">Record for <strong>${name}</strong> updated successfully!</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => toast.classList.add('toast-show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('toast-show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Charts
+        let lineChart, pieChart, barChart;
+        const chartColors = {
+            light: { text: '#64748b', grid: '#f1f5f9' },
+            dark: { text: '#94a3b8', grid: '#334155' }
+        };
+        function initCharts() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const colorSet = isDark ? chartColors.dark : chartColors.light;
+
+            lineChart = new Chart(document.getElementById('lineChart'), {
+                type: 'line',
+                data: { labels: ['Jan','Feb','Mar','Apr','May','Jun'], datasets:[{ label:'Sales', data:[12000,19000,15000,25000,22000,30000], borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.4 }]},
+                options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{grid:{color:colorSet.grid}, ticks:{color:colorSet.text}}, x:{grid:{display:false}, ticks:{color:colorSet.text}}}}
+            });
+            pieChart = new Chart(document.getElementById('pieChart'), {
+                type: 'doughnut',
+                data:{ labels:['Active','Pending','Inactive'], datasets:[{ data:[65,20,15], backgroundColor:['#22c55e','#eab308','#ef4444'], borderWidth:0 }]},
+                options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{color:colorSet.text}}}}
+            });
+            barChart = new Chart(document.getElementById('barChart'), {
+                type: 'bar',
+                data:{ labels:['Jan','Feb','Mar','Apr','May','Jun'], datasets:[{ label:'Orders', data:[65,85,72,110,95,130], backgroundColor:'#6366f1', borderRadius:6 }]},
+                options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, grid:{color:colorSet.grid}, ticks:{color:colorSet.text}}, x:{grid:{display:false}, ticks:{color:colorSet.text}}}}
+            });
+        }
+
+        // Dark mode
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            document.getElementById('sun-icon').classList.toggle('hidden', !isDark);
+            document.getElementById('moon-icon').classList.toggle('hidden', isDark);
+            const colorSet = isDark ? chartColors.dark : chartColors.light;
+            [lineChart,pieChart,barChart].forEach(chart=>{
+                if(chart.options.scales){
+                    if(chart.options.scales.y){ chart.options.scales.y.grid.color=colorSet.grid; chart.options.scales.y.ticks.color=colorSet.text; }
+                    if(chart.options.scales.x){ chart.options.scales.x.ticks.color=colorSet.text; }
+                }
+                if(chart.options.plugins.legend.labels){ chart.options.plugins.legend.labels.color=colorSet.text; }
+                chart.update();
+            });
+        }
+
+        // Frontend tab switching
+        const tabs = ['dashboard','users','orders','settings'];
+        tabs.forEach(tab => {
+            const btn = document.querySelector(`a[href="#${tab}"]`);
+            if(btn) btn.addEventListener('click', e => { e.preventDefault(); showSection(tab); });
+        });
+        function showSection(section){
+            tabs.forEach(tab=>{
+                document.getElementById(`${tab}-section`).classList.add('hidden');
+                const btn = document.querySelector(`a[href="#${tab}"]`);
+                btn?.classList.remove('bg-blue-50','dark:bg-blue-900/20','text-blue-600','dark:text-blue-400');
+            });
+            document.getElementById(`${section}-section`).classList.remove('hidden');
+            const activeBtn = document.querySelector(`a[href="#${section}"]`);
+            activeBtn?.classList.add('bg-blue-50','dark:bg-blue-900/20','text-blue-600','dark:text-blue-400');
+        }
+
+        window.onload = initCharts;
+    </script>
+</body>
+</html>
